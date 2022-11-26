@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
 const app = express();
@@ -19,6 +19,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run() {
     try {
         const categoriesCollections = client.db('WatchesData').collection('watchCategories');
+        const watchDataCollections = client.db('WatchesData').collection('categoryData');
 
         app.get('/categories', async (req, res) => {
             const query = {};
@@ -26,6 +27,19 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/category/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await categoriesCollections.findOne(query);
+            res.send(result)
+        })
+
+        app.get('/categoryWatchData', async (req, res) => {
+            const index = req.query.index;
+            const filter = { index: index }
+            const result = await watchDataCollections.find(filter).toArray();
+            res.send(result);
+        })
     } finally {
 
     }
