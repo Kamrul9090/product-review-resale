@@ -20,7 +20,8 @@ async function run() {
     try {
         const categoriesCollections = client.db('WatchesData').collection('watchCategories');
         const watchDataCollections = client.db('WatchesData').collection('categoryData');
-
+        const bookingCollections = client.db('WatchesData').collection('bookings');
+        const usersCollections = client.db('WatchesData').collection('users');
         app.get('/categories', async (req, res) => {
             const query = {};
             const result = await categoriesCollections.find(query).toArray();
@@ -40,6 +41,31 @@ async function run() {
             const result = await watchDataCollections.find(filter).toArray();
             res.send(result);
         })
+
+        app.get('/bookings', async (req, res) => {
+            const query = {};
+            const data = await bookingCollections.find(query).toArray();
+            res.send(data)
+        })
+        app.post('/bookings', async (req, res) => {
+            const booking = req.body;
+            console.log(booking);
+            const doc = {
+                name: booking.name,
+                email: booking.email,
+            }
+
+            const alreadyBooked = await bookingCollections.find(doc).toArray();
+
+            if (alreadyBooked.length) {
+                return res.send({ acknowledged: false, message: 'This item already booked' })
+            }
+            const result = await bookingCollections.insertOne(booking);
+            res.send(result)
+        })
+
+
+
     } finally {
 
     }
