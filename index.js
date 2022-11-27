@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require('dotenv').config()
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
@@ -28,6 +29,10 @@ async function run() {
             res.send(result)
         })
 
+        app.get('jwt', (req, res) => {
+
+        })
+
         app.get('/category/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -49,7 +54,6 @@ async function run() {
         })
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
-            console.log(booking);
             const doc = {
                 name: booking.name,
                 email: booking.email,
@@ -57,14 +61,25 @@ async function run() {
 
             const alreadyBooked = await bookingCollections.find(doc).toArray();
 
-            if (alreadyBooked.length) {
+            if (alreadyBooked.includes(doc)) {
                 return res.send({ acknowledged: false, message: 'This item already booked' })
             }
             const result = await bookingCollections.insertOne(booking);
             res.send(result)
         })
 
+        app.get('/users', async (req, res) => {
+            const query = {};
+            const data = await usersCollections.find(query).toArray();
+            res.send(data);
+        })
 
+        app.post('/users', async (req, res) => {
+            const userData = req.body;
+            console.log(userData);
+            const result = await usersCollections.insertOne(userData);
+            res.send(result)
+        })
 
     } finally {
 
