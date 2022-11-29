@@ -115,6 +115,13 @@ async function run() {
             const data = await productsCollections.find(query).toArray();
             res.send(data);
         })
+        app.get('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const filter = { id: ObjectId(id) }
+            const data = await productsCollections.find(filter).toArray();
+            res.send(data);
+        })
         app.post('/users', async (req, res) => {
             const userData = req.body;
             const result = await usersCollections.insertOne(userData);
