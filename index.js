@@ -52,7 +52,6 @@ async function run() {
             const email = req.query.email;
             const query = { email: email };
             const user = await usersCollections.findOne(query);
-            // console.log(user);
             if (user) {
                 const token = jwt.sign({ email }, process.env.CRYPTO_SECRET_KEY, { expiresIn: '1d' })
                 return res.send({ accessToken: token });
@@ -110,18 +109,40 @@ async function run() {
             const data = await usersCollections.find(query).toArray();
             res.send(data);
         })
+        app.get('/allBuyers', async (req, res) => {
+            const query = {}
+            const users = await usersCollections.find(query).toArray();
+            const buyer = users.filter(user => user.select === 'Buyer' && user.role !== 'admin');
+            res.send(buyer)
+        })
+
+        app.get('/allSellers', async (req, res) => {
+            const query = {}
+            const users = await usersCollections.find(query).toArray();
+            const seller = users.filter(user => user.select === 'Seller' && user.role !== 'admin');
+            res.send(seller)
+        })
+
         app.get('/products', async (req, res) => {
             const query = {}
+            // const query = req.query.email;
             const data = await productsCollections.find(query).toArray();
             res.send(data);
         })
         app.get('/products/:id', async (req, res) => {
             const id = req.params.id;
-            console.log(id);
-            const filter = { id: ObjectId(id) }
-            const data = await productsCollections.find(filter).toArray();
+            const filter = { _id: ObjectId(id) }
+            const data = await productsCollections.findOne(filter);
             res.send(data);
         })
+
+        app.delete('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const data = await productsCollections.deleteOne(filter);
+            res.send(data);
+        })
+
         app.post('/users', async (req, res) => {
             const userData = req.body;
             const result = await usersCollections.insertOne(userData);
@@ -134,6 +155,25 @@ async function run() {
             res.send(data);
         })
 
+        app.put('/users/admin/:id', verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const adminUser = await usersCollections.findOne(query);
+            if (adminUser?.role !== 'admin') {
+                return res.status(403).send('forbidden access')
+            }
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+
+            const updateDoc = {
+                $set: {
+                    role: 'admin',
+                }
+            }
+            const user = await usersCollections.updateOne(filter, updateDoc, options);
+            res.send(user);
+        })
     } finally {
 
     }
