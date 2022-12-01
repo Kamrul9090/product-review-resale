@@ -104,19 +104,25 @@ async function run() {
 
 
 
-        app.get('/users', async (req, res) => {
+        app.get('/users', verifyJWT, async (req, res) => {
             const query = {};
             const data = await usersCollections.find(query).toArray();
             res.send(data);
         })
-        app.get('/allBuyers', async (req, res) => {
+        app.delete('/users/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const data = await usersCollections.deleteOne(query);
+            res.send(data);
+        })
+        app.get('/allBuyers', verifyJWT, async (req, res) => {
             const query = {}
             const users = await usersCollections.find(query).toArray();
             const buyer = users.filter(user => user.select === 'Buyer' && user.role !== 'admin');
             res.send(buyer)
         })
 
-        app.get('/allSellers', async (req, res) => {
+        app.get('/allSellers', verifyJWT, async (req, res) => {
             const query = {}
             const users = await usersCollections.find(query).toArray();
             const seller = users.filter(user => user.select === 'Seller' && user.role !== 'admin');
@@ -153,6 +159,13 @@ async function run() {
             const productsData = req.body;
             const data = await productsCollections.insertOne(productsData);
             res.send(data);
+        })
+
+        app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const user = await usersCollections.findOne(query);
+            res.send({ isAdmin: user?.role === 'admin' });
         })
 
         app.put('/users/admin/:id', verifyJWT, async (req, res) => {
