@@ -86,6 +86,14 @@ async function run() {
             const data = await bookingCollections.find(query).toArray();
             res.send(data)
         })
+
+        app.get('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const data = await bookingCollections.findOne(query);
+            res.send(data)
+        })
+
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
             const doc = {
@@ -129,11 +137,20 @@ async function run() {
         })
 
         app.get('/products', async (req, res) => {
-            const query = {}
-            // const query = req.query.email;
+            const email = req.query.email;
+            const query = { email: email }
             const data = await productsCollections.find(query).toArray();
             res.send(data);
         })
+
+        app.get('/advertiseProducts', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const data = await productsCollections.find(query).toArray();
+            const filter = data.filter(product => product.isAdvertise === 'advertised');
+            res.send(filter);
+        })
+
         app.get('/products/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) }
@@ -146,6 +163,21 @@ async function run() {
             const filter = { _id: ObjectId(id) }
             const data = await productsCollections.deleteOne(filter);
             res.send(data);
+        })
+
+        app.put('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true };
+
+            const updateDoc = {
+                $set: {
+                    isAdvertise: "advertised",
+                }
+            }
+
+            const result = await productsCollections.updateOne(filter, updateDoc, options)
+            res.send(result)
         })
 
         app.post('/users', async (req, res) => {
