@@ -81,20 +81,19 @@ async function run() {
         })
 
         app.get('/bookings', async (req, res) => {
-            const query = {};
+            const email = req.query.email;
+            const query = { email: email }
             const data = await bookingCollections.find(query).toArray();
             res.send(data)
         })
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
-            console.log(booking);
             const doc = {
                 name: booking.name,
                 email: booking.email,
             }
 
             const alreadyBooked = await bookingCollections.find(doc).toArray();
-            console.log(alreadyBooked);
             if (alreadyBooked.length) {
                 return res.send({ acknowledged: false, message: 'This item already booked' })
             }
@@ -166,6 +165,13 @@ async function run() {
             const query = { email };
             const user = await usersCollections.findOne(query);
             res.send({ isAdmin: user?.role === 'admin' });
+        })
+
+        app.get('/users/seller/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const user = await usersCollections.findOne(query);
+            res.send({ isSeller: user?.select === 'Seller' })
         })
 
         app.put('/users/admin/:id', verifyJWT, async (req, res) => {
