@@ -3,6 +3,8 @@ const cors = require("cors");
 require('dotenv').config()
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 const port = process.env.PORT || 5000;
 
 const app = express();
@@ -41,6 +43,7 @@ async function run() {
         const bookingCollections = client.db('WatchesData').collection('bookings');
         const usersCollections = client.db('WatchesData').collection('users');
         const productsCollections = client.db('WatchesData').collection('products');
+        const paymentsCollections = client.db('WatchesData').collection('payments');
 
         app.get('/categories', async (req, res) => {
             const query = {};
@@ -109,8 +112,39 @@ async function run() {
             res.send(result)
         })
 
+        app.post("/create-payment-intent", async (req, res) => {
+            const booking = req.body;
+            const price = booking.price;
+            const amount = price * 100;
 
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: "usd",
+                amount: amount,
+                "payment_method_types": [
+                    "card"
+                ]
+            });
 
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        })
+
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const result = await paymentsCollections.insertOne(payment);
+            const id = payment.bookingId;
+            const filter = { _id: ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const updatedResult = await bookingCollections.updateOne(filter, updateDoc)
+            res.send(result);
+
+        })
         app.get('/users', verifyJWT, async (req, res) => {
             const query = {};
             const data = await usersCollections.find(query).toArray();
